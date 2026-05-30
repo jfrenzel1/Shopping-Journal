@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7F77DD">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recovery Journal">
+<meta name="description" content="Shopping addiction recovery tracker — log urges, purchases, wins and reflections.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Recovery Journal</title>
+
+<style>
+:root {
+  --purple: #7F77DD;
+  --purple-light: #EEEDFE;
+  --purple-mid: #AFA9EC;
+  --purple-dark: #534AB7;
+  --purple-deeper: #3C3489;
+  --teal-light: #E1F5EE;
+  --teal: #1D9E75;
+  --red-light: #FCEBEB;
+  --red: #A32D2D;
+  --green-light: #EAF3DE;
+  --green: #3B6D11;
+  --amber-light: #FAEEDA;
+  --amber: #854F0B;
+  --bg: #f6f5fb;
+  --surface: #ffffff;
+  --surface2: #f0effe;
+  --border: rgba(127,119,221,0.15);
+  --border2: rgba(127,119,221,0.3);
+  --text: #1a1830;
+  --text2: #6b6694;
+  --text3: #a09cc4;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0e1a;
+    --surface: #1a1830;
+    --surface2: #231f3a;
+    --border: rgba(175,169,236,0.12);
+    --border2: rgba(175,169,236,0.25);
+    --text: #eceaf8;
+    --text2: #9b97c4;
+    --text3: #5c5880;
+    --purple-light: #2a2650;
+    --teal-light: #0d2e22;
+    --red-light: #2a1111;
+    --green-light: #111f08;
+    --amber-light: #2a1e06;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;font-size:16px;line-height:1.5;overscroll-behavior:none}
+
+/* LAYOUT */
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative}
+#header{background:var(--surface);border-bottom:0.5px solid var(--border);padding:calc(var(--safe-top) + 14px) 16px 14px;flex-shrink:0}
+#main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-bot) + 80px)}
+#nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:0.5px solid var(--border);display:flex;padding-bottom:var(--safe-bot);z-index:100}
+
+/* HEADER */
+.hdr-row{display:flex;align-items:center;gap:10px}
+.hdr-icon{width:36px;height:36px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-icon svg{width:18px;height:18px;stroke:var(--purple-dark);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hdr-title{font-size:17px;font-weight:600;color:var(--text)}
+.hdr-sub{font-size:12px;color:var(--text2)}
+.streak-pill{margin-left:auto;background:var(--purple-light);color:var(--purple-dark);font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;white-space:nowrap}
+
+/* NAV */
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:500;cursor:pointer;transition:color .15s;letter-spacing:.02em;text-transform:uppercase}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s}
+.nav-btn.active{color:var(--purple)}
+.nav-btn.active svg{stroke:var(--purple)}
+
+/* PANELS */
+.panel{display:none;padding:16px}
+.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.metric{background:var(--surface2);border-radius:var(--radius-sm);padding:14px}
+.metric-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+.metric-value{font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.5px}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* FORMS */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 13px;font-size:15px;color:var(--text);font-family:inherit;appearance:none;-webkit-appearance:none;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple)}
+.field textarea{resize:none;min-height:72px;line-height:1.5}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6694' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* RANGE */
+.range-wrap{display:flex;align-items:center;gap:10px}
+.range-wrap input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border2);outline:none}
+.range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--purple);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--purple)}
+.range-val{font-size:15px;font-weight:600;color:var(--purple);min-width:20px;text-align:center}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:14px;background:var(--purple);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;transition:background .15s;letter-spacing:-.1px}
+.btn-primary:active{background:var(--purple-dark)}
+.btn-sm{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px;font-weight:500;border:0.5px solid var(--border2);border-radius:8px;background:none;color:var(--text2);cursor:pointer;font-family:inherit}
+.btn-sm:active{background:var(--surface2)}
+.btn-del{border:none;background:none;color:var(--text3);padding:6px;cursor:pointer;border-radius:6px}
+.btn-del:active{background:var(--red-light);color:var(--red)}
+
+/* LOG ENTRIES */
+.entry{border-bottom:0.5px solid var(--border);padding:12px 0;display:flex;justify-content:space-between;align-items:flex-start}
+.entry:last-child{border-bottom:none}
+.entry-main{flex:1;min-width:0}
+.entry-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px}
+.entry-meta{font-size:12px;color:var(--text2)}
+.entry-actions{display:flex;align-items:center;gap:6px;margin-left:8px;flex-shrink:0}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.badge-yes{background:var(--red-light);color:var(--red)}
+.badge-no{background:var(--green-light);color:var(--green)}
+.badge-purple{background:var(--purple-light);color:var(--purple-dark)}
+.badge-amber{background:var(--amber-light);color:var(--amber)}
+
+/* INTENSITY DOT */
+.int-dots{display:inline-flex;gap:2px;vertical-align:middle}
+.int-dot{width:6px;height:6px;border-radius:50%;background:var(--border2)}
+.int-dot.on{background:var(--purple-mid)}
+
+/* CHIP SELECTOR */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{padding:6px 12px;border-radius:99px;border:0.5px solid var(--border2);font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s}
+.chip.active{background:var(--purple-light);border-color:var(--purple-mid);color:var(--purple-dark);font-weight:500}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 16px;color:var(--text3);font-size:14px}
+.empty-icon{font-size:32px;margin-bottom:8px}
+
+/* CHART WRAP */
+.chart-box{position:relative;width:100%;margin-top:8px}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--safe-bot) + 88px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:200;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SECTION HEADER */
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+
+/* EMOTION TAGS */
+.emo-tags{display:flex;flex-wrap:wrap;gap:6px}
+.emo-tag{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600}
+
+/* INVENTORY */
+.inv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.inv-cell{background:var(--surface2);border-radius:var(--radius-sm);padding:12px 8px;text-align:center}
+.inv-cell-label{font-size:10px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.inv-num{font-size:22px;font-weight:700;color:var(--text);width:100%;text-align:center;background:none;border:none;color:var(--text);font-family:inherit}
+
+/* WIN ITEM */
+.win-item{padding:12px 0;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.win-item:last-child{border-bottom:none}
+.win-trophy{font-size:20px;margin-right:10px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="hdr-row">
+      <div class="hdr-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7h13M10 20a1 1 0 1 0 2 0 1 1 0 0 0-2 0M17 20a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/></svg>
+      </div>
+      <div>
+        <div class="hdr-title">Recovery Journal</div>
+        <div class="hdr-sub" id="today-date">Loading…</div>
+      </div>
+      <div class="streak-pill" id="streak-badge">0 wins</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main">
+
+    <!-- URGE LOG -->
+    <div id="panel-urge" class="panel active">
+      <div class="card">
+        <div class="card-title">Log an urge</div>
+        <div class="row2">
+          <div class="field"><label>Date &amp; time</label><input type="datetime-local" id="urge-dt"></div>
+          <div class="field"><label>Trigger</label>
+            <select id="urge-trigger">
+              <option>Social media</option><option>Email / ad</option><option>Stress</option><option>Boredom</option><option>FOMO</option><option>Retail store</option><option>Friend influence</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Emotion</label>
+          <select id="urge-emotion">
+            <option>Boredom</option><option>Anxiety</option><option>Sadness</option><option>Excitement</option><option>Loneliness</option><option>Overwhelmed</option><option>Happy</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Intensity — <span id="urge-int-out">5</span>/10</label>
+          <div class="range-wrap">
+            <input type="range" min="1" max="10" value="5" step="1" id="urge-intensity" oninput="document.getElementById('urge-int-out').textContent=this.value">
+            <span class="range-val" id="urge-int-out2"></span>
+          </div>
+        </div>
+        <div class="field"><label>Did I buy?</label>
+          <select id="urge-bought"><option value="No">No — resisted 💪</option><option value="Yes">Yes — bought it</option></select>
+        </div>
+        <button class="btn-primary" onclick="saveUrge()">Save urge</button>
+      </div>
+      <div class="card">
+        <div class="sec-hdr"><div class="card-title" style="margin-bottom:0">Recent urges</div></div>
+        <div id="urge-list"><div class="empty"><div class="empty-icon">🔍</div>No urges logged yet.</div></div>
+      </div>
+    </div>
+
+    <!-- PURCHASE -->
+    <div id="panel-purchase" class="panel">
+      <div class="card">
+        <div class="card-title">Log a purchase</div>
+        <div class="row2">
+          <div class="field"><label>What did I buy?</label><input type="text" id="p-item" placeholder="e.g. Linen dress"></div>
+          <div class="field"><label>Cost ($)</label><input type="number" id="p-cost" min="0" step="0.01" placeholder="0.00" inputmode="decimal"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Planned?</label><select id="p-planned"><option>No — impulse</option><option>Yes — planned</option><option>Sort of</option></select></div>
+          <div class="field"><label>Feeling before</label><select id="p-before"><option>Bored</option><option>Anxious</option><option>Happy</option><option>Sad</option><option>Excited</option><option>Stressed</option><option>Neutral</option></select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Feeling after</label><select id="p-after"><option>Excited</option><option>Guilty</option><option>Happy</option><option>Neutral</option><option>Regretful</option><option>Relieved</option></select></div>
+          <div class="field"><label>Feeling 24h later</label><select id="p-24h"><option>Still happy</option><option>Regretful</option><option>Neutral</option><option>Returned it</option><option>Guilty</option></select></div>
+        </div>
+        <div class="field"><label>What did I actually need?</label><textarea id="p-needed" placeholder="What was the real need behind this purchase?"></textarea></div>
+        <button class="btn-primary" onclick="savePurchase()">Save purchase</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Purchase history</div>
+        <div id="purchase-list"><div class="empty"><div class="empty-icon">🧾</div>No purchases logged yet.</div></div>
+      </div>
+    </div>
+
+    <!-- WINS -->
+    <div id="panel-wins" class="panel">
+      <div class="card">
+        <div class="card-title">Celebrate a win 🏆</div>
+        <div class="row2">
+          <div class="field"><label>Date</label><input type="date" id="win-date"></div>
+          <div class="field"><label>Temptation</label><input type="text" id="win-temptation" placeholder="e.g. New sneakers"></div>
+        </div>
+        <div class="field"><label>What did I do instead?</label><textarea id="win-instead" placeholder="e.g. Went for a walk, called a friend, journaled…"></textarea></div>
+        <button class="btn-primary" onclick="saveWin()">Log this win</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Win history</div>
+        <div id="wins-list"><div class="empty"><div class="empty-icon">🌟</div>No wins yet — you've got this!</div></div>
+      </div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div id="panel-weekly" class="panel">
+      <div class="card">
+        <div class="card-title">Weekly reflection</div>
+        <div class="field"><label>Week of</label><input type="date" id="wr-date"></div>
+        <div class="field"><label>Shopping triggers this week</label><textarea id="wr-triggers" placeholder="e.g. Instagram ads, stress at work…"></textarea></div>
+        <div class="field"><label>Emotions that showed up most</label><textarea id="wr-emotions" placeholder="e.g. Boredom, anxiety, excitement…"></textarea></div>
+        <div class="field"><label>What am I proud of?</label><textarea id="wr-proud" placeholder="e.g. I resisted 3 urges this week…"></textarea></div>
+        <div class="field"><label>What to handle differently next week?</label><textarea id="wr-differently" placeholder="e.g. When bored I'll call a friend instead…"></textarea></div>
+        <div class="field"><label>One specific goal for the coming week</label><input type="text" id="wr-goal" placeholder="e.g. No online shopping Mon–Fri"></div>
+        <div class="field"><label>Financial goals (tap to select)</label>
+          <div class="chips">
+            <span class="chip" onclick="this.classList.toggle('active')">Pay off debt</span>
+            <span class="chip" onclick="this.classList.toggle('active')">Emergency fund</span>
+            <span class="chip" onclick="this.classList.toggle('active')">Save for travel</span>
+            <span class="chip" onclick="this.classList.toggle('active')">Invest for retirement</span>
+            <span class="chip" onclick="this.classList.toggle('active')">Buy a home</span>
+            <span class="chip" onclick="this.classList.toggle('active')">Reduce money stress</span>
+          </div>
+        </div>
+        <div class="field"><label>Did spending support my goals?</label><select id="wr-aligned"><option>Yes, mostly</option><option>Somewhat</option><option>No, not really</option></select></div>
+        <div class="field"><label>Purchases with genuine value</label><input type="text" id="wr-value" placeholder="e.g. Groceries, gym membership…"></div>
+        <div class="field"><label>Impulse purchases</label><textarea id="wr-impulse" placeholder="e.g. Three items from TikTok Shop…"></textarea></div>
+        <button class="btn-primary" onclick="saveWeekly()">Save reflection</button>
+      </div>
+      <div id="weekly-history"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="panel-dashboard" class="panel">
+      <div class="metrics" id="dash-metrics"></div>
+      <div class="card">
+        <div class="card-title">Urge outcomes</div>
+        <div class="chart-box" style="height:180px"><canvas id="chart-outcome" role="img" aria-label="Doughnut chart of urge outcomes">Urge outcomes: bought vs resisted.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Top triggers</div>
+        <div class="chart-box" style="height:180px"><canvas id="chart-triggers" role="img" aria-label="Bar chart of shopping triggers">Shopping trigger frequencies.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Spending over time</div>
+        <div class="chart-box" style="height:160px"><canvas id="chart-spend" role="img" aria-label="Line chart of spending over time">Spending over time.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Emotions driving urges</div>
+        <div class="emo-tags" id="dash-emos"></div>
+      </div>
+      <div class="card" id="inventory-panel">
+        <div class="card-title">Inventory</div>
+        <div class="inv-grid" id="inv-grid"></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:10px">Reality check before buying — update counts here.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Biggest lesson this month</div>
+        <textarea id="inv-lesson" style="width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 13px;font-size:15px;color:var(--text);font-family:inherit;resize:none;min-height:72px;outline:none" placeholder="Write your most important insight…"></textarea>
+        <button class="btn-primary" onclick="saveLesson()" style="margin-top:10px">Save lesson</button>
+      </div>
+    </div>
+
+  </div><!-- end main -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="switchTab('urge')" aria-label="Urge log">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12 6v6l4 2"/></svg>
+      Urge
+    </button>
+    <button class="nav-btn" onclick="switchTab('purchase')" aria-label="Purchase log">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Purchase
+    </button>
+    <button class="nav-btn" onclick="switchTab('wins')" aria-label="No-buy wins">
+      <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10l-1 8a4 4 0 0 1-8 0L7 4z"/><path d="M5 4H3M21 4h-2"/></svg>
+      Wins
+    </button>
+    <button class="nav-btn" onclick="switchTab('weekly')" aria-label="Weekly reflection">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Weekly
+    </button>
+    <button class="nav-btn" onclick="switchTab('dashboard')" aria-label="Dashboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8"/><rect x="10" y="9" width="4" height="12"/><rect x="17" y="5" width="4" height="16"/></svg>
+      Dashboard
+    </button>
+  </nav>
+
+</div><!-- end app -->
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ─── DATA ───────────────────────────────────────────────────────
+const DB_KEY = 'saj_v1';
+let D = {urges:[],purchases:[],wins:[],weeklys:[],inventory:{clothing:0,shoes:0,skincare:0,makeup:0,books:0,homedecor:0},lesson:''};
+let charts = {};
+
+function save(){ try{localStorage.setItem(DB_KEY,JSON.stringify(D))}catch(e){} }
+function load(){
+  try{const r=localStorage.getItem(DB_KEY);if(r)D=JSON.parse(r)}catch(e){}
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+function init(){
+  load();
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const dt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const d  = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('urge-dt').value = dt;
+  document.getElementById('win-date').value = d;
+  document.getElementById('wr-date').value = d;
+  document.getElementById('today-date').textContent = now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  if(D.lesson) document.getElementById('inv-lesson').value = D.lesson;
+  renderAll();
+  updateStreak();
+}
+
+// ─── TAB SWITCHING ───────────────────────────────────────────────
+function switchTab(tab){
+  const tabs=['urge','purchase','wins','weekly','dashboard'];
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='dashboard') renderDashboard();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ─── HELPERS ────────────────────────────────────────────────────
+function fmtDt(iso){ try{return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch{return iso} }
+function fmtD(iso){ try{return new Date(iso+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}catch{return iso} }
+function dots(n){ return Array.from({length:10},(_,i)=>`<span class="int-dot${i<n?' on':''}"></span>`).join('') }
+
+// ─── URGES ──────────────────────────────────────────────────────
+function saveUrge(){
+  const e={dt:document.getElementById('urge-dt').value,trigger:document.getElementById('urge-trigger').value,emotion:document.getElementById('urge-emotion').value,intensity:parseInt(document.getElementById('urge-intensity').value),bought:document.getElementById('urge-bought').value};
+  if(!e.dt){toast('Set a date/time first');return}
+  D.urges.unshift(e); save(); renderUrges(); updateStreak(); toast('Urge logged ✓');
+}
+function renderUrges(){
+  const el=document.getElementById('urge-list');
+  if(!D.urges.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>No urges logged yet.</div>';return}
+  el.innerHTML=D.urges.slice(0,20).map((u,i)=>`
+    <div class="entry">
+      <div class="entry-main">
+        <div class="entry-title">${u.trigger} · ${u.emotion}</div>
+        <div class="entry-meta"><span class="int-dots">${dots(u.intensity)}</span> ${u.intensity}/10 · ${fmtDt(u.dt)}</div>
+      </div>
+      <div class="entry-actions">
+        <span class="badge ${u.bought==='Yes'?'badge-yes':'badge-no'}">${u.bought==='Yes'?'Bought':'Resisted'}</span>
+        <button class="btn-del" onclick="delUrge(${i})" aria-label="Delete">✕</button>
+      </div>
+    </div>`).join('');
+}
+function delUrge(i){D.urges.splice(i,1);save();renderUrges();updateStreak();}
+
+// ─── PURCHASES ──────────────────────────────────────────────────
+function savePurchase(){
+  const e={item:document.getElementById('p-item').value.trim(),cost:parseFloat(document.getElementById('p-cost').value)||0,planned:document.getElementById('p-planned').value,before:document.getElementById('p-before').value,after:document.getElementById('p-after').value,h24:document.getElementById('p-24h').value,needed:document.getElementById('p-needed').value,date:new Date().toISOString()};
+  if(!e.item){toast('Enter what you bought');return}
+  D.purchases.unshift(e); save(); renderPurchases(); toast('Purchase logged ✓');
+  ['p-item','p-cost','p-needed'].forEach(id=>document.getElementById(id).value='');
+}
+function renderPurchases(){
+  const el=document.getElementById('purchase-list');
+  if(!D.purchases.length){el.innerHTML='<div class="empty"><div class="empty-icon">🧾</div>No purchases logged yet.</div>';return}
+  const total=D.purchases.reduce((s,p)=>s+p.cost,0);
+  el.innerHTML=`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Total: <strong>$${total.toFixed(2)}</strong> · ${D.purchases.length} purchases</div>`+
+    D.purchases.slice(0,20).map((p,i)=>`
+    <div class="entry">
+      <div class="entry-main">
+        <div class="entry-title">${p.item}</div>
+        <div class="entry-meta">$${p.cost.toFixed(2)} · <span class="badge ${p.planned.startsWith('No')?'badge-yes':'badge-no'}">${p.planned}</span> · Before: ${p.before}</div>
+        ${p.needed?`<div style="font-size:11px;color:var(--text2);margin-top:3px">Need: ${p.needed}</div>`:''}
+      </div>
+      <div class="entry-actions"><button class="btn-del" onclick="delPurchase(${i})" aria-label="Delete">✕</button></div>
+    </div>`).join('');
+}
+function delPurchase(i){D.purchases.splice(i,1);save();renderPurchases();}
+
+// ─── WINS ────────────────────────────────────────────────────────
+function saveWin(){
+  const e={date:document.getElementById('win-date').value,temptation:document.getElementById('win-temptation').value.trim(),instead:document.getElementById('win-instead').value.trim()};
+  if(!e.temptation){toast('Describe the temptation');return}
+  D.wins.unshift(e); save(); renderWins(); updateStreak(); toast('Win logged! 🏆');
+  document.getElementById('win-temptation').value='';document.getElementById('win-instead').value='';
+}
+function renderWins(){
+  const el=document.getElementById('wins-list');
+  if(!D.wins.length){el.innerHTML='<div class="empty"><div class="empty-icon">🌟</div>No wins yet — you\'ve got this!</div>';return}
+  el.innerHTML=D.wins.slice(0,20).map((w,i)=>`
+    <div class="win-item">
+      <span class="win-trophy">🏆</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:500">${w.temptation}</div>
+        ${w.instead?`<div style="font-size:12px;color:var(--text2);margin-top:2px">Instead: ${w.instead}</div>`:''}
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${fmtD(w.date)}</div>
+      </div>
+      <button class="btn-del" onclick="delWin(${i})" aria-label="Delete">✕</button>
+    </div>`).join('');
+}
+function delWin(i){D.wins.splice(i,1);save();renderWins();updateStreak();}
+
+// ─── WEEKLY ──────────────────────────────────────────────────────
+function saveWeekly(){
+  const chips=[...document.querySelectorAll('.chip.active')].map(c=>c.textContent);
+  const e={date:document.getElementById('wr-date').value,triggers:document.getElementById('wr-triggers').value,emotions:document.getElementById('wr-emotions').value,proud:document.getElementById('wr-proud').value,differently:document.getElementById('wr-differently').value,goal:document.getElementById('wr-goal').value,goals:chips,aligned:document.getElementById('wr-aligned').value,value:document.getElementById('wr-value').value,impulse:document.getElementById('wr-impulse').value};
+  D.weeklys.unshift(e); save(); renderWeeklyHistory(); toast('Reflection saved ✓');
+}
+function renderWeeklyHistory(){
+  const el=document.getElementById('weekly-history');
+  if(!D.weeklys.length){el.innerHTML='';return}
+  el.innerHTML=D.weeklys.slice(0,5).map((w,i)=>`
+    <div class="card">
+      <div class="sec-hdr"><div class="card-title" style="margin-bottom:0">Week of ${fmtD(w.date)}</div><button class="btn-del" onclick="delWeekly(${i})">✕</button></div>
+      ${w.proud?`<p style="font-size:13px;margin-bottom:6px"><span style="color:var(--text2)">Proud:</span> ${w.proud}</p>`:''}
+      ${w.goal?`<p style="font-size:13px;margin-bottom:6px"><span style="color:var(--text2)">Goal:</span> ${w.goal}</p>`:''}
+      ${w.goals&&w.goals.length?`<div style="display:flex;flex-wrap:wrap;gap:4px">${w.goals.map(g=>`<span class="badge badge-purple">${g}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+}
+function delWeekly(i){D.weeklys.splice(i,1);save();renderWeeklyHistory();}
+
+// ─── STREAK ──────────────────────────────────────────────────────
+function updateStreak(){
+  const total=D.wins.length+D.urges.filter(u=>u.bought==='No').length;
+  document.getElementById('streak-badge').textContent=`${total} win${total!==1?'s':''}`;
+}
+
+// ─── LESSON ──────────────────────────────────────────────────────
+function saveLesson(){D.lesson=document.getElementById('inv-lesson').value;save();toast('Lesson saved ✓');}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────
+function renderDashboard(){
+  const totalSpend=D.purchases.reduce((s,p)=>s+p.cost,0);
+  const impulse=D.purchases.filter(p=>p.planned.startsWith('No')).length;
+  const resisted=D.urges.filter(u=>u.bought==='No').length;
+  document.getElementById('dash-metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Total spent</div><div class="metric-value">$${Math.round(totalSpend)}</div><div class="metric-sub">${D.purchases.length} purchases</div></div>
+    <div class="metric"><div class="metric-label">Impulse buys</div><div class="metric-value">${impulse}</div><div class="metric-sub">of ${D.purchases.length} logged</div></div>
+    <div class="metric"><div class="metric-label">Urges resisted</div><div class="metric-value">${resisted}</div><div class="metric-sub">${D.wins.length} no-buy wins</div></div>
+    <div class="metric"><div class="metric-label">Reflections</div><div class="metric-value">${D.weeklys.length}</div><div class="metric-sub">weekly entries</div></div>`;
+
+  const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const textColor=isDark?'#eceaf8':'#1a1830';
+  const gridColor=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)';
+
+  // Outcome donut
+  const bought=D.urges.filter(u=>u.bought==='Yes').length;
+  const resist=D.urges.filter(u=>u.bought==='No').length;
+  mkChart('chart-outcome','doughnut',{labels:['Resisted','Bought'],datasets:[{data:[resist,bought],backgroundColor:['#5DCAA5','#F09595'],borderWidth:0}]},{cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:textColor,font:{size:11},boxWidth:10,padding:8}}}});
+
+  // Triggers bar
+  const trig={};D.urges.forEach(u=>{trig[u.trigger]=(trig[u.trigger]||0)+1});
+  const trigSorted=Object.entries(trig).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  mkChart('chart-triggers','bar',{labels:trigSorted.map(t=>t[0]),datasets:[{data:trigSorted.map(t=>t[1]),backgroundColor:'#AFA9EC',borderRadius:5}]},{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}},x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}}}});
+
+  // Spend line
+  const spByDay={};D.purchases.forEach(p=>{const d=p.date?p.date.slice(0,10):'?';spByDay[d]=(spByDay[d]||0)+p.cost});
+  const days=Object.keys(spByDay).sort().slice(-14);
+  mkChart('chart-spend','line',{labels:days.map(d=>d.slice(5)),datasets:[{data:days.map(d=>parseFloat(spByDay[d].toFixed(2))),borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,.12)',tension:.3,fill:true,pointRadius:3}]},{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+v,color:textColor,font:{size:10}},grid:{color:gridColor}},x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}}}});
+
+  // Emotions
+  const emo={};D.urges.forEach(u=>{emo[u.emotion]=(emo[u.emotion]||0)+1});
+  const palBg=['#EEEDFE','#E1F5EE','#FAEEDA','#FAECE7','#EAF3DE','#FCEBEB'];
+  const palTx=['#534AB7','#0F6E56','#854F0B','#993C1D','#3B6D11','#A32D2D'];
+  document.getElementById('dash-emos').innerHTML=Object.entries(emo).sort((a,b)=>b[1]-a[1]).map(([em,n],i)=>`<span class="emo-tag" style="background:${palBg[i%6]};color:${palTx[i%6]}">${em} · ${n}</span>`).join('');
+
+  // Inventory
+  const cats=[['clothing','Clothing'],['shoes','Shoes'],['skincare','Skincare'],['makeup','Makeup'],['books','Books'],['homedecor','Home decor']];
+  document.getElementById('inv-grid').innerHTML=cats.map(([k,label])=>`
+    <div class="inv-cell">
+      <div class="inv-cell-label">${label}</div>
+      <input class="inv-num" type="number" min="0" value="${D.inventory[k]||0}" oninput="D.inventory['${k}']=parseInt(this.value)||0;save()">
+    </div>`).join('');
+}
+
+function mkChart(id,type,data,opts){
+  if(charts[id]){charts[id].destroy();delete charts[id];}
+  const ctx=document.getElementById(id);
+  if(!ctx)return;
+  charts[id]=new Chart(ctx,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
+}
+
+function renderAll(){
+  renderUrges();renderPurchases();renderWins();renderWeeklyHistory();
+}
+
+// ─── SERVICE WORKER REG ──────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+init();
+</script>
+</body>
+</html>
